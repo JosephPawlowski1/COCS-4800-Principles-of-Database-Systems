@@ -1,0 +1,125 @@
+set echo on;
+
+--1. List the names of authors who have authored more than 3 books
+SELECT AUTHORNAME
+FROM BOOK_AUTHORS 
+GROUP BY AUTHORNAME
+HAVING COUNT(AUTHORNAME)>3;
+
+
+
+--2. Print the names of borrowers whose phone number starts with area code â€œ414â€?.
+SELECT NAME,PHONE
+FROM BORROWER
+WHERE PHONE LIKE '414%' ;
+
+
+--3. Retrieve the names of borrowers who have never checked out any books.
+SELECT BR.NAME 
+FROM BORROWER BR 
+WHERE BR.CARDNO NOT IN (SELECT CARDNO FROM BOOK_LOANS);
+
+
+--4. List the titles of books written by â€œRingerâ€? author?
+SELECT B.TITLE
+FROM BOOK B , BOOK_AUTHORS A
+WHERE B.BOOKID = A.BOOKID AND A.AUTHORNAME = 'Ringer';
+
+
+--5.  List the name(s) of borrowers, who have loaned books ONLY published 
+--    by â€œNew Moon Booksâ€? publisher?
+SELECT b.Name
+FROM BORROWER b, BOOK_LOANS l, BOOK k
+WHERE b.CardNo = l.CardNo AND Publisher = 'New Moon Books'
+GROUP BY b.CardNo, b.Name;
+
+--6. How many copies of the book titled â€œBut Is It User Friendly?â€? 
+--   are owned by each library branch?
+SELECT LB.BRANCHNAME, BC.NO_OF_COPIES
+FROM  LIBRARY_BRANCH LB, BOOK_COPIES BC, BOOK B 
+WHERE B.TITLE = 'But Is It User Friendly?'
+AND B.BOOKID = BC.BOOKID  AND BC.BRANCHID = LB.BRANCHID; 
+      
+   
+      
+--7. List the book titles co-authored by more than 2 people.
+SELECT DISTINCT (B.TITLE )
+FROM BOOK B, BOOK_AUTHORS BA
+WHERE B.BOOKID = BA.BOOKID AND  BA.BOOKID IN (SELECT BA.BOOKID
+                                                    FROM BOOK_AUTHORS BA 
+                                                    GROUP BY BA.BOOKID
+                                                    HAVING COUNT(BOOKID)>2);
+                                                    
+
+
+--8. Print the names of borrowers who have borrowed the highest number of books.
+SELECT DISTINCT BR.NAME 
+FROM BORROWER BR , BOOK_LOANS BL
+WHERE BR.CARDNO = BL.CARDNO AND BL.CARDNO IN(SELECT MAX(CARDNO)  
+                                            FROM BOOK_LOANS
+                                            GROUP BY CARDNO
+                                            HAVING COUNT(CARDNO) >1);
+                                          
+
+--9. Print the names of borrowers who have not yet returned the books.
+SELECT b.Name
+FROM BORROWER b
+WHERE NOT EXISTS (SELECT l.DateIn FROM BOOK_LOANS l WHERE b.CardNo = l.CardNo);   
+
+
+--10. Print the BookId, book title and average rating received for each book. 
+--    Shows the results sorted in decreasing order of average rating received. 
+--    Do not show books below an average rating of 3.0
+SELECT b.BookId, b.Title, br.rtg
+FROM BOOK b,
+(SELECT BookId, AVG(Rating) rtg
+FROM BOOK_LOANS
+GROUP BY BookId) br
+WHERE b.BookId = br.BookId
+AND br.rtg>=3 ORDER BY rtg DESC;
+
+
+--11. For each book that is loaned out from the "Sharpstown" branch 
+--    and which are not yet returned to the library, retrieve the book title,
+--    the borrower's name, and the borrower's address.
+SELECT B.TITLE, BR.NAME, BR.ADDRESS
+FROM BOOK B, BORROWER BR, LIBRARY_BRANCH LB, BOOK_LOANS BL
+WHERE LB.BRANCHNAME = 'Sharpstown' AND LB.BRANCHID = BL.BRANCHID AND BL.CARDNO = BR.CARDNO AND BL.DATEIN IS NULL 
+AND B.BOOKID = BL.BOOKID;
+
+--12. Print the total number of borrowers in the database.
+SELECT COUNT(NAME)
+FROM BORROWER;
+
+-- 13.	Print the names of tough reviewers. Tough reviewers are the borrowers who have given the lowest overall 
+-- rating value that a book has for each of the books they have rated.
+SELECT b.name, b.title, T.s
+FROM BORROWER b, BOOK b, BOOK_LOANS bl
+LEFT JOIN BOOK_LOANS l, (
+	SELECT l.Rating, l.BookID
+FROM BOOK_LOANS l
+WHERE l.Rating IN 
+		(SELECT min(l.Rating) FROM BOOK_LOANS l)
+	)T 
+ON T.Rating = b.Rating
+AND T.BookId = l.BookId;
+
+
+
+
+--14.  Print the names of borrowers and the count of number of books that they have reviewed.  
+--Show the results sorted in decreasing order of number of books reviewed. 
+--Display the count as zero for the borrowers who have not reviewed any book.
+SELECT Name, nvl(Rating,0)
+FROM BORROWER br LEFT OUTER JOIN BOOK_LOANS bl
+ON br.CardNO = bl.CardNO
+ORDER BY nvl(Rating,0) DESC;
+
+
+--15.  Print the names and addresses of all publishers in the database.
+SELECT P.NAME, P.ADDRESS 
+FROM PUBLISHER P;
+
+
+
+set echo off;

@@ -1,0 +1,20 @@
+Database Course - Assignment 2                   Due date: Sept. 23rd
+
+ 
+
+Convert the below EER diagram into a Relational schema diagram. While converting specializations, use the option that generates the least number of tables. Be sure to identify primary keys and foreign keys (arrows pointing) in your schema diagram.
+
+ 
+
+
+
+ 
+
+ 
+
+Note: If you prefer, you may just submit the scanned version of your hand written solution.
+
+ 
+
+Submission: Please submit to d2l.mu.edu your diagram electronic copy in one of the following formats: .png, .jpg, .doc, .ppt, or .pdf.
+

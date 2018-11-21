@@ -1,0 +1,563 @@
+SQL> 
+SQL> --1. List the names of authors who have authored more than 3 books
+SQL> SELECT AUTHORNAME
+  2  FROM BOOK_AUTHORS 
+  3  GROUP BY AUTHORNAME
+  4  HAVING COUNT(AUTHORNAME)>3;
+
+AUTHORNAME                                        
+--------------------------------------------------
+Ringer
+
+SQL> 
+SQL> 
+SQL> 
+SQL> --2. Print the names of borrowers whose phone number starts with area code â€œ414â€?.
+SQL> SELECT NAME,PHONE
+  2  FROM BORROWER
+  3  WHERE PHONE LIKE '414%' ;
+
+NAME                                               PHONE          
+-------------------------------------------------- ---------------
+Greg                                               414-555-9857   
+Peacock                                            414-555-8122   
+Buchanan                                           414-000-1234   
+
+SQL> 
+SQL> 
+SQL> --3. Retrieve the names of borrowers who have never checked out any books.
+SQL> SELECT BR.NAME 
+  2  FROM BORROWER BR 
+  3  WHERE BR.CARDNO NOT IN (SELECT CARDNO FROM BOOK_LOANS);
+
+NAME                                              
+--------------------------------------------------
+Greg
+Garcia
+Ram
+Suyama
+Callahan
+
+SQL> 
+SQL> 
+SQL> --4. List the titles of books written by â€œRingerâ€? author?
+SQL> SELECT B.TITLE
+  2  FROM BOOK B , BOOK_AUTHORS A
+  3  WHERE B.BOOKID = A.BOOKID AND A.AUTHORNAME = 'Ringer';
+
+TITLE                                                                                               
+----------------------------------------------------------------------------------------------------
+Silicon Valley Gastronomic Treats
+Secrets of Silicon Valley
+Is Anger the Enemy?
+Life Without Fear
+
+SQL> 
+SQL> 
+SQL> --5.  List the name(s) of borrowers, who have loaned books ONLY published 
+SQL> --    by â€œNew Moon Booksâ€? publisher?
+SQL> SELECT b.Name
+  2  FROM BORROWER b, BOOK_LOANS l, BOOK k
+  3  WHERE b.CardNo = l.CardNo AND Publisher = 'New Moon Books'
+  4  GROUP BY b.CardNo, b.Name;
+
+NAME                                              
+--------------------------------------------------
+Leverling
+King
+Miller
+Davolio
+Fuller
+Davis
+Buchanan
+Dodsworth
+Peacock
+Simpson
+
+10 rows selected. 
+
+SQL> 
+SQL> --6. How many copies of the book titled â€œBut Is It User Friendly?â€? 
+SQL> --   are owned by each library branch?
+SQL> SELECT LB.BRANCHNAME, BC.NO_OF_COPIES
+  2  FROM  LIBRARY_BRANCH LB, BOOK_COPIES BC, BOOK B 
+  3  WHERE B.TITLE = 'But Is It User Friendly?'
+  4  AND B.BOOKID = BC.BOOKID  AND BC.BRANCHID = LB.BRANCHID;
+
+BRANCHNAME                                         NO_OF_COPIES
+-------------------------------------------------- ------------
+Sharpstown                                                    2
+Bemis                                                         4
+Downtown                                                      5
+
+SQL> 
+SQL> 
+SQL> 
+SQL> --7. List the book titles co-authored by more than 2 people.
+SQL> SELECT DISTINCT (B.TITLE )
+  2  FROM BOOK B, BOOK_AUTHORS BA
+  3  WHERE B.BOOKID = BA.BOOKID AND  BA.BOOKID IN (SELECT BA.BOOKID
+  4                                                      FROM BOOK_AUTHORS BA 
+  5                                                      GROUP BY BA.BOOKID
+  6                                                      HAVING COUNT(BOOKID)>2);
+
+TITLE                                                                                               
+----------------------------------------------------------------------------------------------------
+Emotional Security: A New Algorithm
+Fifty Years in Buckingham Palace Kitchens
+
+SQL> 
+SQL> 
+SQL> 
+SQL> --8. Print the names of borrowers who have borrowed the highest number of books.
+SQL> SELECT DISTINCT BR.NAME 
+  2  FROM BORROWER BR , BOOK_LOANS BL
+  3  WHERE BR.CARDNO = BL.CARDNO AND BL.CARDNO IN(SELECT MAX(CARDNO)  
+  4                                              FROM BOOK_LOANS
+  5                                              GROUP BY CARDNO
+  6                                              HAVING COUNT(CARDNO) >1);
+
+NAME                                              
+--------------------------------------------------
+Davolio
+Fuller
+Davis
+
+SQL> 
+SQL> 
+SQL> --9. Print the names of borrowers who have not yet returned the books.
+SQL> SELECT b.Name
+  2  FROM BORROWER b
+  3  WHERE NOT EXISTS (SELECT l.DateIn FROM BOOK_LOANS l WHERE b.CardNo = l.CardNo);
+
+NAME                                              
+--------------------------------------------------
+Greg
+Garcia
+Ram
+Suyama
+Callahan
+
+SQL> 
+SQL> 
+SQL> --10. Print the BookId, book title and average rating received for each book. 
+SQL> --    Shows the results sorted in decreasing order of average rating received. 
+SQL> --    Do not show books below an average rating of 3.0
+SQL> SELECT b.BookId, b.Title, br.rtg
+  2  FROM BOOK b,
+  3  (SELECT BookId, AVG(Rating) rtg
+  4  FROM BOOK_LOANS
+  5  GROUP BY BookId) br
+  6  WHERE b.BookId = br.BookId
+  7  AND br.rtg>=3 ORDER BY rtg DESC;
+
+    BOOKID TITLE                                                                                                       RTG
+---------- ---------------------------------------------------------------------------------------------------- ----------
+      2106 Life Without Fear                                                                                             9
+      4203 Fifty Years in Buckingham Palace Kitchens                                                                   8.5
+      9999 Net Etiquette                                                                                                 8
+      7777 Emotional Security: A New Algorithm                                                                           7
+      1035 But Is It User Friendly?                                                                                      7
+      2075 You Can Combat Computer Stress!                                                                               3
+      1111 Cooking with Computers: Surreptitious Balance Sheets                                                          3
+      3218 Onions, Leeks, and Garlic: Cooking Secrets of the Mediterranean                                               3
+
+8 rows selected. 
+
+SQL> 
+SQL> 
+SQL> --11. For each book that is loaned out from the "Sharpstown" branch 
+SQL> --    and which are not yet returned to the library, retrieve the book title,
+SQL> --    the borrower's name, and the borrower's address.
+SQL> SELECT B.TITLE, BR.NAME, BR.ADDRESS
+  2  FROM BOOK B, BORROWER BR, LIBRARY_BRANCH LB, BOOK_LOANS BL
+  3  WHERE LB.BRANCHNAME = 'Sharpstown' AND LB.BRANCHID = BL.BRANCHID AND BL.CARDNO = BR.CARDNO AND BL.DATEIN IS NULL 
+  4  AND B.BOOKID = BL.BOOKID;
+
+TITLE                                                                                                NAME                                               ADDRESS                                                                                             
+---------------------------------------------------------------------------------------------------- -------------------------------------------------- ----------------------------------------------------------------------------------------------------
+Life Without Fear                                                                                    King                                               Edgeham Hollow  Winchester Way                                                                      
+But Is It User Friendly?                                                                             Davolio                                            507 - 20th Ave. E.  Apt. 2A                                                                         
+
+SQL> 
+SQL> --12. Print the total number of borrowers in the database.
+SQL> SELECT COUNT(NAME)
+  2  FROM BORROWER;
+
+COUNT(NAME)
+-----------
+         15
+
+SQL> 
+SQL> -- 13.	Print the names of tough reviewers. Tough reviewers are the borrowers who have given the lowest overall 
+SQL> -- rating value that a book has for each of the books they have rated.
+SQL> SELECT b.name, b.title, T.s
+  2  FROM BORROWER b, BOOK b, BOOK_LOANS bl
+  3  left JOIN BOOK_LOANS l, (
+  4  	SELECT l.Rating, l.BookID
+  5  FROM BOOK_LOANS l
+  6  WHERE l.Rating IN 
+  7  		(SELECT min(l.Rating) FROM BOOK_LOANS l)
+  8  	) T 
+  9  ON T.Rating = b.Rating
+ 10  AND T.BookId = l.BookId;
+
+Error starting at line : 96 in command -
+SELECT b.name, b.title, T.s
+FROM BORROWER b, BOOK b, BOOK_LOANS bl
+left JOIN BOOK_LOANS l, (
+	SELECT l.Rating, l.BookID
+FROM BOOK_LOANS l
+WHERE l.Rating IN 
+		(SELECT min(l.Rating) FROM BOOK_LOANS l)
+	) T 
+ON T.Rating = b.Rating
+AND T.BookId = l.BookId
+Error at Command Line : 98 Column : 23
+Error report -
+SQL Error: ORA-00905: missing keyword
+00905. 00000 -  "missing keyword"
+*Cause:    
+*Action:
+SQL> 
+SQL> 
+SQL> 
+SQL> --14.  Print the names of borrowers and the count of number of books that they have reviewed.  
+SQL> --Show the results sorted in decreasing order of number of books reviewed. 
+SQL> --Display the count as zero for the borrowers who have not reviewed any book.
+SQL> SELECT Name, nvl(Rating,0)
+  2  FROM BORROWER br LEFT OUTER JOIN BOOK_LOANS bl
+  3  ON br.CardNO = bl.CardNO
+  4  ORDER BY nvl(Rating,0) DESC;
+
+NAME                                               NVL(RATING,0)
+-------------------------------------------------- -------------
+Buchanan                                                      10
+King                                                           9
+Miller                                                         8
+Davis                                                          8
+Fuller                                                         8
+Peacock                                                        7
+Davis                                                          7
+Davolio                                                        5
+Fuller                                                         5
+Leverling                                                      3
+Dodsworth                                                      3
+
+NAME                                               NVL(RATING,0)
+-------------------------------------------------- -------------
+Simpson                                                        2
+Davolio                                                        1
+Callahan                                                       0
+Suyama                                                         0
+Garcia                                                         0
+Greg                                                           0
+Ram                                                            0
+
+18 rows selected. 
+
+SQL> 
+SQL> 
+SQL> --15.  Print the names and addresses of all publishers in the database.
+SQL> SELECT P.NAME, P.ADDRESS 
+  2  FROM PUBLISHER P;
+
+NAME                                               ADDRESS                                                                                             
+-------------------------------------------------- ----------------------------------------------------------------------------------------------------
+New Moon Books                                     Boston                                                                                              
+BinnetHardley                                      Washington                                                                                          
+Algodata Infosystems                               Berkeley                                                                                            
+Five Lakes Publishing                              Chicago                                                                                             
+Ramona Publishers                                  Dallas                                                                                              
+GGGG                                               M?nchen                                                                                             
+Scootney Books                                     New York                                                                                            
+Lucerne Publishing                                 Paris                                                                                               
+
+8 rows selected. 
+
+SQL> 
+SQL> 
+SQL> 
+SQL> set echo off;
+SQL> 
+SQL> --1. List the names of authors who have authored more than 3 books
+SQL> SELECT AUTHORNAME
+  2  FROM BOOK_AUTHORS 
+  3  GROUP BY AUTHORNAME
+  4  HAVING COUNT(AUTHORNAME)>3;
+
+AUTHORNAME                                        
+--------------------------------------------------
+Ringer
+
+SQL> 
+SQL> 
+SQL> 
+SQL> --2. Print the names of borrowers whose phone number starts with area code â€œ414â€?.
+SQL> SELECT NAME,PHONE
+  2  FROM BORROWER
+  3  WHERE PHONE LIKE '414%' ;
+
+NAME                                               PHONE          
+-------------------------------------------------- ---------------
+Greg                                               414-555-9857   
+Peacock                                            414-555-8122   
+Buchanan                                           414-000-1234   
+
+SQL> 
+SQL> 
+SQL> --3. Retrieve the names of borrowers who have never checked out any books.
+SQL> SELECT BR.NAME 
+  2  FROM BORROWER BR 
+  3  WHERE BR.CARDNO NOT IN (SELECT CARDNO FROM BOOK_LOANS);
+
+NAME                                              
+--------------------------------------------------
+Greg
+Garcia
+Ram
+Suyama
+Callahan
+
+SQL> 
+SQL> 
+SQL> --4. List the titles of books written by â€œRingerâ€? author?
+SQL> SELECT B.TITLE
+  2  FROM BOOK B , BOOK_AUTHORS A
+  3  WHERE B.BOOKID = A.BOOKID AND A.AUTHORNAME = 'Ringer';
+
+TITLE                                                                                               
+----------------------------------------------------------------------------------------------------
+Silicon Valley Gastronomic Treats
+Secrets of Silicon Valley
+Is Anger the Enemy?
+Life Without Fear
+
+SQL> 
+SQL> 
+SQL> --5.  List the name(s) of borrowers, who have loaned books ONLY published 
+SQL> --    by â€œNew Moon Booksâ€? publisher?
+SQL> SELECT b.Name
+  2  FROM BORROWER b, BOOK_LOANS l, BOOK k
+  3  WHERE b.CardNo = l.CardNo AND Publisher = 'New Moon Books'
+  4  GROUP BY b.CardNo, b.Name;
+
+NAME                                              
+--------------------------------------------------
+Leverling
+King
+Miller
+Davolio
+Fuller
+Davis
+Buchanan
+Dodsworth
+Peacock
+Simpson
+
+10 rows selected. 
+
+SQL> 
+SQL> --6. How many copies of the book titled â€œBut Is It User Friendly?â€? 
+SQL> --   are owned by each library branch?
+SQL> SELECT LB.BRANCHNAME, BC.NO_OF_COPIES
+  2  FROM  LIBRARY_BRANCH LB, BOOK_COPIES BC, BOOK B 
+  3  WHERE B.TITLE = 'But Is It User Friendly?'
+  4  AND B.BOOKID = BC.BOOKID  AND BC.BRANCHID = LB.BRANCHID;
+
+BRANCHNAME                                         NO_OF_COPIES
+-------------------------------------------------- ------------
+Sharpstown                                                    2
+Bemis                                                         4
+Downtown                                                      5
+
+SQL> 
+SQL> 
+SQL> 
+SQL> --7. List the book titles co-authored by more than 2 people.
+SQL> SELECT DISTINCT (B.TITLE )
+  2  FROM BOOK B, BOOK_AUTHORS BA
+  3  WHERE B.BOOKID = BA.BOOKID AND  BA.BOOKID IN (SELECT BA.BOOKID
+  4                                                      FROM BOOK_AUTHORS BA 
+  5                                                      GROUP BY BA.BOOKID
+  6                                                      HAVING COUNT(BOOKID)>2);
+
+TITLE                                                                                               
+----------------------------------------------------------------------------------------------------
+Emotional Security: A New Algorithm
+Fifty Years in Buckingham Palace Kitchens
+
+SQL> 
+SQL> 
+SQL> 
+SQL> --8. Print the names of borrowers who have borrowed the highest number of books.
+SQL> SELECT DISTINCT BR.NAME 
+  2  FROM BORROWER BR , BOOK_LOANS BL
+  3  WHERE BR.CARDNO = BL.CARDNO AND BL.CARDNO IN(SELECT MAX(CARDNO)  
+  4                                              FROM BOOK_LOANS
+  5                                              GROUP BY CARDNO
+  6                                              HAVING COUNT(CARDNO) >1);
+
+NAME                                              
+--------------------------------------------------
+Davolio
+Fuller
+Davis
+
+SQL> 
+SQL> 
+SQL> --9. Print the names of borrowers who have not yet returned the books.
+SQL> SELECT b.Name
+  2  FROM BORROWER b
+  3  WHERE NOT EXISTS (SELECT l.DateIn FROM BOOK_LOANS l WHERE b.CardNo = l.CardNo);
+
+NAME                                              
+--------------------------------------------------
+Greg
+Garcia
+Ram
+Suyama
+Callahan
+
+SQL> 
+SQL> 
+SQL> --10. Print the BookId, book title and average rating received for each book. 
+SQL> --    Shows the results sorted in decreasing order of average rating received. 
+SQL> --    Do not show books below an average rating of 3.0
+SQL> SELECT b.BookId, b.Title, br.rtg
+  2  FROM BOOK b,
+  3  (SELECT BookId, AVG(Rating) rtg
+  4  FROM BOOK_LOANS
+  5  GROUP BY BookId) br
+  6  WHERE b.BookId = br.BookId
+  7  AND br.rtg>=3 ORDER BY rtg DESC;
+
+    BOOKID TITLE                                                                                                       RTG
+---------- ---------------------------------------------------------------------------------------------------- ----------
+      2106 Life Without Fear                                                                                             9
+      4203 Fifty Years in Buckingham Palace Kitchens                                                                   8.5
+      9999 Net Etiquette                                                                                                 8
+      7777 Emotional Security: A New Algorithm                                                                           7
+      1035 But Is It User Friendly?                                                                                      7
+      2075 You Can Combat Computer Stress!                                                                               3
+      1111 Cooking with Computers: Surreptitious Balance Sheets                                                          3
+      3218 Onions, Leeks, and Garlic: Cooking Secrets of the Mediterranean                                               3
+
+8 rows selected. 
+
+SQL> 
+SQL> 
+SQL> --11. For each book that is loaned out from the "Sharpstown" branch 
+SQL> --    and which are not yet returned to the library, retrieve the book title,
+SQL> --    the borrower's name, and the borrower's address.
+SQL> SELECT B.TITLE, BR.NAME, BR.ADDRESS
+  2  FROM BOOK B, BORROWER BR, LIBRARY_BRANCH LB, BOOK_LOANS BL
+  3  WHERE LB.BRANCHNAME = 'Sharpstown' AND LB.BRANCHID = BL.BRANCHID AND BL.CARDNO = BR.CARDNO AND BL.DATEIN IS NULL 
+  4  AND B.BOOKID = BL.BOOKID;
+
+TITLE                                                                                                NAME                                               ADDRESS                                                                                             
+---------------------------------------------------------------------------------------------------- -------------------------------------------------- ----------------------------------------------------------------------------------------------------
+Life Without Fear                                                                                    King                                               Edgeham Hollow  Winchester Way                                                                      
+But Is It User Friendly?                                                                             Davolio                                            507 - 20th Ave. E.  Apt. 2A                                                                         
+
+SQL> 
+SQL> --12. Print the total number of borrowers in the database.
+SQL> SELECT COUNT(NAME)
+  2  FROM BORROWER;
+
+COUNT(NAME)
+-----------
+         15
+
+SQL> 
+SQL> -- 13.	Print the names of tough reviewers. Tough reviewers are the borrowers who have given the lowest overall 
+SQL> -- rating value that a book has for each of the books they have rated.
+SQL> SELECT b.name, b.title, T.s
+  2  FROM BORROWER b, BOOK b, BOOK_LOANS bl
+  3  LEFT JOIN BOOK_LOANS l, (
+  4  	SELECT l.Rating, l.BookID
+  5  FROM BOOK_LOANS l
+  6  WHERE l.Rating IN 
+  7  		(SELECT min(l.Rating) FROM BOOK_LOANS l)
+  8  	)T 
+  9  ON T.Rating = b.Rating
+ 10  AND T.BookId = l.BookId;
+
+Error starting at line : 96 in command -
+SELECT b.name, b.title, T.s
+FROM BORROWER b, BOOK b, BOOK_LOANS bl
+LEFT JOIN BOOK_LOANS l, (
+	SELECT l.Rating, l.BookID
+FROM BOOK_LOANS l
+WHERE l.Rating IN 
+		(SELECT min(l.Rating) FROM BOOK_LOANS l)
+	)T 
+ON T.Rating = b.Rating
+AND T.BookId = l.BookId
+Error at Command Line : 98 Column : 23
+Error report -
+SQL Error: ORA-00905: missing keyword
+00905. 00000 -  "missing keyword"
+*Cause:    
+*Action:
+SQL> 
+SQL> 
+SQL> 
+SQL> 
+SQL> --14.  Print the names of borrowers and the count of number of books that they have reviewed.  
+SQL> --Show the results sorted in decreasing order of number of books reviewed. 
+SQL> --Display the count as zero for the borrowers who have not reviewed any book.
+SQL> SELECT Name, nvl(Rating,0)
+  2  FROM BORROWER br LEFT OUTER JOIN BOOK_LOANS bl
+  3  ON br.CardNO = bl.CardNO
+  4  ORDER BY nvl(Rating,0) DESC;
+
+NAME                                               NVL(RATING,0)
+-------------------------------------------------- -------------
+Buchanan                                                      10
+King                                                           9
+Miller                                                         8
+Davis                                                          8
+Fuller                                                         8
+Peacock                                                        7
+Davis                                                          7
+Davolio                                                        5
+Fuller                                                         5
+Leverling                                                      3
+Dodsworth                                                      3
+
+NAME                                               NVL(RATING,0)
+-------------------------------------------------- -------------
+Simpson                                                        2
+Davolio                                                        1
+Callahan                                                       0
+Suyama                                                         0
+Garcia                                                         0
+Greg                                                           0
+Ram                                                            0
+
+18 rows selected. 
+
+SQL> 
+SQL> 
+SQL> --15.  Print the names and addresses of all publishers in the database.
+SQL> SELECT P.NAME, P.ADDRESS 
+  2  FROM PUBLISHER P;
+
+NAME                                               ADDRESS                                                                                             
+-------------------------------------------------- ----------------------------------------------------------------------------------------------------
+New Moon Books                                     Boston                                                                                              
+BinnetHardley                                      Washington                                                                                          
+Algodata Infosystems                               Berkeley                                                                                            
+Five Lakes Publishing                              Chicago                                                                                             
+Ramona Publishers                                  Dallas                                                                                              
+GGGG                                               M?nchen                                                                                             
+Scootney Books                                     New York                                                                                            
+Lucerne Publishing                                 Paris                                                                                               
+
+8 rows selected. 
+
+SQL> 
+SQL> 
+SQL> 
+SQL> set echo off;
